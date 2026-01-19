@@ -1,0 +1,422 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, RotateCcw, Check, Calculator, Package, Flower, HelpCircle } from 'lucide-react';
+
+const FlowerShopMath = () => {
+  // 狀態管理
+  const [mode, setMode] = useState('menu'); // 'menu', 'interactive', 'demo'
+  const [step, setStep] = useState(1); // 1: Division (Packing), 2: Addition (Total)
+  
+  // 數據狀態
+  const [originalBouquets] = useState(11);
+  const [totalLooseRoses] = useState(156);
+  const [rosesPerBouquet] = useState(12);
+  
+  // 動畫狀態
+  const [currentLoose, setCurrentLoose] = useState(156);
+  const [newBouquets, setNewBouquets] = useState(0);
+  const [isPacking, setIsPacking] = useState(false);
+  const [showFinalTotal, setShowFinalTotal] = useState(false);
+  
+  // 用戶輸入狀態
+  const [inputDiv1, setInputDiv1] = useState('');
+  const [inputDiv2, setInputDiv2] = useState('');
+  const [inputDivAns, setInputDivAns] = useState('');
+  
+  const [inputAdd1, setInputAdd1] = useState('');
+  const [inputAdd2, setInputAdd2] = useState('');
+  const [inputAddAns, setInputAddAns] = useState('');
+  
+  const [feedback, setFeedback] = useState('');
+  const [feedbackType, setFeedbackType] = useState('neutral'); // neutral, success, error
+
+  // 重置函數
+  const resetGame = () => {
+    setStep(1);
+    setCurrentLoose(156);
+    setNewBouquets(0);
+    setIsPacking(false);
+    setShowFinalTotal(false);
+    setInputDiv1('');
+    setInputDiv2('');
+    setInputDivAns('');
+    setInputAdd1('');
+    setInputAdd2('');
+    setInputAddAns('');
+    setFeedback('');
+    setFeedbackType('neutral');
+  };
+
+  const handleModeSelect = (selectedMode) => {
+    setMode(selectedMode);
+    resetGame();
+    if (selectedMode === 'demo') {
+      runDemo();
+    }
+  };
+
+  // 自動演示邏輯
+  const runDemo = async () => {
+    // Step 1: 開始包裝
+    setFeedback('題目：花店裏原有玫瑰 11 束，將 156 枝散裝玫瑰每 12 枝包成一束...');
+    await wait(3500); // 增加閱讀時間
+    
+    setFeedback('第一步：計算散裝玫瑰可以包成幾束？ (156 ÷ 12)');
+    setIsPacking(true);
+    await wait(1000); // 稍微停頓讓學生準備看動畫
+    
+    // 模擬包裝動畫
+    let tempLoose = 156;
+    let tempBouquets = 0;
+    
+    const packInterval = setInterval(() => {
+      if (tempLoose >= 12) {
+        tempLoose -= 12;
+        tempBouquets += 1;
+        setCurrentLoose(tempLoose);
+        setNewBouquets(tempBouquets);
+      } else {
+        clearInterval(packInterval);
+        setIsPacking(false);
+        finishStep1Demo();
+      }
+    }, 600); // 減慢包裝速度 (原本200ms -> 600ms)
+  };
+
+  const finishStep1Demo = async () => {
+    setFeedback('包裝完成！我們得到了 13 束新玫瑰。');
+    // 慢慢填入數字
+    await wait(1000);
+    setInputDiv1('156');
+    await wait(800);
+    setInputDiv2('12');
+    await wait(800);
+    setInputDivAns('13');
+    await wait(3000); // 停留久一點看結果
+    
+    setStep(2);
+    setFeedback('第二步：將原本的 11 束加上新包好的 13 束。');
+    await wait(2500);
+    
+    // 模擬填寫第二步
+    setInputAdd1('11');
+    await wait(1000);
+    setInputAdd2('13');
+    await wait(1000);
+    
+    setShowFinalTotal(true);
+    setInputAddAns('24');
+    setFeedback('答案算出：總共有 24 束玫瑰！');
+    setFeedbackType('success');
+  };
+
+  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // 互動模式邏輯
+  const checkStep1 = () => {
+    if (parseInt(inputDiv1) === 156 && parseInt(inputDiv2) === 12 && parseInt(inputDivAns) === 13) {
+      setFeedback('答對了！156 除以 12 等於 13 束。');
+      setFeedbackType('success');
+      setIsPacking(true);
+      
+      // 快速完成動畫
+      let tempLoose = currentLoose;
+      let tempBouquets = newBouquets;
+      const packInterval = setInterval(() => {
+        if (tempLoose >= 12) {
+          tempLoose -= 12;
+          tempBouquets += 1;
+          setCurrentLoose(tempLoose);
+          setNewBouquets(tempBouquets);
+        } else {
+          clearInterval(packInterval);
+          setIsPacking(false);
+          setTimeout(() => {
+            setStep(2);
+            setFeedback('現在進入第二步，計算總數。');
+            setFeedbackType('neutral');
+          }, 1000);
+        }
+      }, 50);
+    } else {
+      setFeedback('算式好像不太對喔？試試看：156 枝，每 12 枝一束。');
+      setFeedbackType('error');
+    }
+  };
+
+  const checkStep2 = () => {
+    if (
+      (parseInt(inputAdd1) === 11 && parseInt(inputAdd2) === 13 && parseInt(inputAddAns) === 24) ||
+      (parseInt(inputAdd1) === 13 && parseInt(inputAdd2) === 11 && parseInt(inputAddAns) === 24)
+    ) {
+      setFeedback('太棒了！完全正確！現有 24 束玫瑰。');
+      setFeedbackType('success');
+      setShowFinalTotal(true);
+    } else {
+      setFeedback('再想一想，原有 11 束，加上新包好的 13 束...');
+      setFeedbackType('error');
+    }
+  };
+
+  // UI 元件
+  const BouquetIcon = ({ count, color = "text-rose-500" }) => (
+    <div className="flex flex-col items-center m-1 transition-all duration-500 transform scale-100 hover:scale-110">
+      <div className={`relative ${color}`}>
+        <Flower size={32} fill="currentColor" strokeWidth={1.5} />
+        <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5">
+          <div className="text-[10px] text-white font-bold px-1">12</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-sky-50 font-sans text-gray-800 p-4 md:p-8 flex flex-col items-center">
+      
+      {/* Header */}
+      <header className="w-full max-w-4xl bg-white rounded-2xl shadow-lg p-6 mb-6 text-center border-b-4 border-sky-400">
+        <h1 className="text-2xl md:text-3xl font-bold text-sky-600 mb-2">🌹 花店玫瑰數學題 🌹</h1>
+        <p className="text-gray-600 text-lg">
+          題目：原有 <strong>11</strong> 束，店員再把 <strong>156</strong> 枝玫瑰包裝成每 <strong>12</strong> 枝一束，花店現有玫瑰多少束？
+        </p>
+      </header>
+
+      {/* Main Game Area */}
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
+        
+        {/* Left: Visualization */}
+        <div className="w-full md:w-1/2 bg-sky-100 p-4 flex flex-col border-b md:border-b-0 md:border-r border-sky-200">
+          <h3 className="text-xl font-bold text-sky-700 mb-4 flex items-center">
+            <Package className="mr-2" /> 花店現場
+          </h3>
+
+          {/* Top Shelf: Original Bouquets */}
+          <div className="bg-white/60 rounded-xl p-4 mb-4 shadow-sm min-h-[120px]">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-bold text-gray-500">原有花束 (11束)</span>
+              {showFinalTotal && <span className="text-sm font-bold text-green-600 animate-bounce">總共 24 束!</span>}
+            </div>
+            <div className="flex flex-wrap content-start">
+              {Array.from({ length: originalBouquets }).map((_, i) => (
+                <BouquetIcon key={`orig-${i}`} count={1} color="text-rose-400" />
+              ))}
+              {/* Animated New Bouquets moving here */}
+              {step === 2 && Array.from({ length: newBouquets }).map((_, i) => (
+                <div key={`moved-${i}`} className="animate-in fade-in zoom-in duration-500">
+                  <BouquetIcon count={1} color="text-rose-600" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom Area: Packing Station */}
+          <div className="bg-orange-50 rounded-xl p-4 flex-grow shadow-inner border border-orange-100 relative">
+            <span className="text-sm font-bold text-orange-400 block mb-2">包裝工作台</span>
+            
+            <div className="flex justify-between items-end h-full">
+              {/* Loose Roses Bin */}
+              <div className="flex flex-col items-center justify-end w-1/3">
+                <div className="relative w-24 h-24 md:w-32 md:h-32 bg-red-100 rounded-full flex items-center justify-center border-4 border-red-200 shadow-inner overflow-hidden transition-all duration-300" style={{ transform: `scale(${0.5 + (currentLoose/156)*0.5})` }}>
+                  <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/flower.png')]"></div>
+                  <span className="text-2xl md:text-3xl font-bold text-red-500">{currentLoose}</span>
+                  <span className="text-xs text-red-400 absolute bottom-4">枝散裝</span>
+                </div>
+              </div>
+
+              {/* Arrow Animation */}
+              <div className="flex-1 flex justify-center items-center pb-8">
+                {isPacking ? (
+                  <div className="flex space-x-1 animate-pulse">
+                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                    <span className="text-orange-500 font-bold text-xs">包裝中...</span>
+                  </div>
+                ) : (
+                  <span className="text-gray-300 text-2xl">➔</span>
+                )}
+              </div>
+
+              {/* New Bouquets Accumulation */}
+              <div className="w-1/3 flex flex-col items-center justify-end min-h-[100px]">
+                <div className="flex flex-wrap justify-center items-end content-end w-full">
+                  {step === 1 && Array.from({ length: newBouquets }).map((_, i) => (
+                    <div key={`new-${i}`} className="animate-in slide-in-from-left duration-300">
+                      <BouquetIcon count={1} color="text-rose-600" />
+                    </div>
+                  ))}
+                  {step === 2 && <div className="text-gray-400 italic text-sm">已移至上方</div>}
+                </div>
+                {step === 1 && <span className="text-rose-600 font-bold mt-2">{newBouquets} 束 (新)</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Interaction Panel */}
+        <div className="w-full md:w-1/2 p-6 flex flex-col justify-center bg-white relative">
+          
+          {/* Feedback Message */}
+          <div className={`absolute top-0 left-0 right-0 p-3 text-center text-sm font-bold transition-colors duration-300 ${
+            feedbackType === 'success' ? 'bg-green-100 text-green-700' : 
+            feedbackType === 'error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+          }`}>
+            {feedback || "請選擇模式開始"}
+          </div>
+
+          <div className="mt-12 flex-grow flex flex-col justify-center">
+            
+            {/* Mode Selection */}
+            {mode === 'menu' && (
+              <div className="space-y-4">
+                <button 
+                  onClick={() => handleModeSelect('demo')}
+                  className="w-full py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md flex items-center justify-center text-lg font-bold transition-transform hover:scale-105"
+                >
+                  <Play className="mr-2" /> 自動演示 (看老師做)
+                </button>
+                <button 
+                  onClick={() => handleModeSelect('interactive')}
+                  className="w-full py-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-md flex items-center justify-center text-lg font-bold transition-transform hover:scale-105"
+                >
+                  <Calculator className="mr-2" /> 互動解題 (我自己做)
+                </button>
+              </div>
+            )}
+
+            {/* Step 1: Division */}
+            {mode !== 'menu' && (
+              <div className={`transition-all duration-500 ${step === 2 && mode === 'interactive' ? 'opacity-50 pointer-events-none filter blur-[1px]' : 'opacity-100'}`}>
+                <div className="flex items-center mb-2">
+                  <div className="bg-sky-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-2">1</div>
+                  <h3 className="text-lg font-bold text-gray-700">先算：156 枝可以包成幾束？</h3>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-center space-x-2 mb-6">
+                  <input 
+                    type="number" 
+                    value={inputDiv1}
+                    onChange={(e) => setInputDiv1(e.target.value)}
+                    readOnly={mode === 'demo' || step === 2}
+                    className="w-20 p-2 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-sky-500 outline-none"
+                    placeholder="?"
+                  />
+                  <span className="text-2xl text-gray-400">÷</span>
+                  <input 
+                    type="number" 
+                    value={inputDiv2}
+                    onChange={(e) => setInputDiv2(e.target.value)}
+                    readOnly={mode === 'demo' || step === 2}
+                    className="w-16 p-2 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-sky-500 outline-none"
+                    placeholder="?"
+                  />
+                  <span className="text-2xl text-gray-400">=</span>
+                  <input 
+                    type="number" 
+                    value={inputDivAns}
+                    onChange={(e) => setInputDivAns(e.target.value)}
+                    readOnly={mode === 'demo' || step === 2}
+                    className="w-20 p-2 text-center text-xl font-bold border-2 border-sky-300 bg-sky-50 text-sky-700 rounded-lg focus:border-sky-500 outline-none"
+                    placeholder="?"
+                  />
+                  <span className="text-gray-500 font-bold ml-2">束</span>
+                </div>
+                {mode === 'interactive' && step === 1 && (
+                  <button 
+                    onClick={checkStep1}
+                    disabled={isPacking}
+                    className="w-full py-2 bg-sky-500 text-white rounded-lg font-bold shadow hover:bg-sky-600 disabled:bg-gray-300"
+                  >
+                    檢查答案 & 包裝
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Divider */}
+            {mode !== 'menu' && <div className="h-px bg-gray-200 my-6"></div>}
+
+            {/* Step 2: Addition */}
+            {mode !== 'menu' && step === 2 && (
+              <div className="animate-in slide-in-from-bottom duration-500">
+                <div className="flex items-center mb-2">
+                  <div className="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-2">2</div>
+                  <h3 className="text-lg font-bold text-gray-700">再算：現在總共有幾束？</h3>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-center space-x-2 mb-6">
+                   <input 
+                    type="number" 
+                    value={inputAdd1}
+                    onChange={(e) => setInputAdd1(e.target.value)}
+                    readOnly={mode === 'demo' || showFinalTotal}
+                    className="w-16 p-2 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-green-500 outline-none"
+                    placeholder="?"
+                  />
+                  <span className="text-2xl text-gray-400">+</span>
+                  <input 
+                    type="number" 
+                    value={inputAdd2}
+                    onChange={(e) => setInputAdd2(e.target.value)}
+                    readOnly={mode === 'demo' || showFinalTotal}
+                    className="w-16 p-2 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-green-500 outline-none"
+                    placeholder="?"
+                  />
+                  <span className="text-2xl text-gray-400">=</span>
+                  <input 
+                    type="number" 
+                    value={inputAddAns}
+                    onChange={(e) => setInputAddAns(e.target.value)}
+                    readOnly={mode === 'demo' || showFinalTotal}
+                    className="w-20 p-2 text-center text-xl font-bold border-2 border-green-300 bg-green-50 text-green-700 rounded-lg focus:border-green-500 outline-none"
+                    placeholder="?"
+                  />
+                  <span className="text-gray-500 font-bold ml-2">束</span>
+                </div>
+                {mode === 'interactive' && !showFinalTotal && (
+                  <button 
+                    onClick={checkStep2}
+                    className="w-full py-2 bg-green-500 text-white rounded-lg font-bold shadow hover:bg-green-600"
+                  >
+                    檢查最終答案
+                  </button>
+                )}
+                
+                {/* Final Success Message & Equation */}
+                {showFinalTotal && (
+                  <div className="text-center animate-in zoom-in duration-500 mt-4 p-4 bg-yellow-100 rounded-xl border-2 border-yellow-300">
+                    <h2 className="text-2xl font-bold text-yellow-700 mb-1">🎉 答對了！</h2>
+                    <p className="text-yellow-800 font-medium">花店現在共有 24 束玫瑰！</p>
+                    
+                    {/* Full Equation Display */}
+                    <div className="mt-4 pt-3 border-t border-yellow-200/60">
+                      <p className="text-sm text-yellow-800/80 mb-2 font-bold tracking-wide">完整列式：</p>
+                      <div className="text-xl md:text-2xl font-mono text-yellow-900 bg-white/60 rounded-lg p-3 shadow-sm inline-block tracking-wider">
+                        11 + (156 ÷ 12) = 24
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Reset Button */}
+          {mode !== 'menu' && (
+            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-center">
+              <button 
+                onClick={() => setMode('menu')}
+                className="flex items-center text-gray-400 hover:text-gray-600 font-medium text-sm"
+              >
+                <RotateCcw size={16} className="mr-1" /> 回主選單
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="mt-8 text-gray-400 text-sm">
+        專為小學生設計的數學互動教學
+      </div>
+    </div>
+  );
+};
+
+export default FlowerShopMath;
