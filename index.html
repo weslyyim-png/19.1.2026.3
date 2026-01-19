@@ -1,422 +1,841 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Check, Calculator, Package, Flower, HelpCircle } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花店數學題互動教學 (GitHub版)</title>
+    <style>
+        :root {
+            --sky-50: #f0f9ff;
+            --sky-100: #e0f2fe;
+            --sky-200: #bae6fd;
+            --sky-400: #38bdf8;
+            --sky-500: #0ea5e9;
+            --sky-600: #0284c7;
+            --sky-700: #0369a1;
+            
+            --rose-100: #ffe4e6;
+            --rose-400: #fb7185;
+            --rose-500: #f43f5e;
+            --rose-600: #e11d48;
+            
+            --green-100: #dcfce7;
+            --green-300: #86efac;
+            --green-500: #22c55e;
+            --green-600: #16a34a;
+            --green-700: #15803d;
 
-const FlowerShopMath = () => {
-  // 狀態管理
-  const [mode, setMode] = useState('menu'); // 'menu', 'interactive', 'demo'
-  const [step, setStep] = useState(1); // 1: Division (Packing), 2: Addition (Total)
-  
-  // 數據狀態
-  const [originalBouquets] = useState(11);
-  const [totalLooseRoses] = useState(156);
-  const [rosesPerBouquet] = useState(12);
-  
-  // 動畫狀態
-  const [currentLoose, setCurrentLoose] = useState(156);
-  const [newBouquets, setNewBouquets] = useState(0);
-  const [isPacking, setIsPacking] = useState(false);
-  const [showFinalTotal, setShowFinalTotal] = useState(false);
-  
-  // 用戶輸入狀態
-  const [inputDiv1, setInputDiv1] = useState('');
-  const [inputDiv2, setInputDiv2] = useState('');
-  const [inputDivAns, setInputDivAns] = useState('');
-  
-  const [inputAdd1, setInputAdd1] = useState('');
-  const [inputAdd2, setInputAdd2] = useState('');
-  const [inputAddAns, setInputAddAns] = useState('');
-  
-  const [feedback, setFeedback] = useState('');
-  const [feedbackType, setFeedbackType] = useState('neutral'); // neutral, success, error
+            --orange-50: #fff7ed;
+            --orange-100: #ffedd5;
+            --orange-400: #fb923c;
+            --orange-500: #f97316;
 
-  // 重置函數
-  const resetGame = () => {
-    setStep(1);
-    setCurrentLoose(156);
-    setNewBouquets(0);
-    setIsPacking(false);
-    setShowFinalTotal(false);
-    setInputDiv1('');
-    setInputDiv2('');
-    setInputDivAns('');
-    setInputAdd1('');
-    setInputAdd2('');
-    setInputAddAns('');
-    setFeedback('');
-    setFeedbackType('neutral');
-  };
+            --purple-500: #a855f7;
+            --purple-600: #9333ea;
 
-  const handleModeSelect = (selectedMode) => {
-    setMode(selectedMode);
-    resetGame();
-    if (selectedMode === 'demo') {
-      runDemo();
-    }
-  };
+            --yellow-100: #fef9c3;
+            --yellow-300: #fde047;
+            --yellow-700: #a16207;
+            --yellow-800: #854d0e;
 
-  // 自動演示邏輯
-  const runDemo = async () => {
-    // Step 1: 開始包裝
-    setFeedback('題目：花店裏原有玫瑰 11 束，將 156 枝散裝玫瑰每 12 枝包成一束...');
-    await wait(3500); // 增加閱讀時間
-    
-    setFeedback('第一步：計算散裝玫瑰可以包成幾束？ (156 ÷ 12)');
-    setIsPacking(true);
-    await wait(1000); // 稍微停頓讓學生準備看動畫
-    
-    // 模擬包裝動畫
-    let tempLoose = 156;
-    let tempBouquets = 0;
-    
-    const packInterval = setInterval(() => {
-      if (tempLoose >= 12) {
-        tempLoose -= 12;
-        tempBouquets += 1;
-        setCurrentLoose(tempLoose);
-        setNewBouquets(tempBouquets);
-      } else {
-        clearInterval(packInterval);
-        setIsPacking(false);
-        finishStep1Demo();
-      }
-    }, 600); // 減慢包裝速度 (原本200ms -> 600ms)
-  };
-
-  const finishStep1Demo = async () => {
-    setFeedback('包裝完成！我們得到了 13 束新玫瑰。');
-    // 慢慢填入數字
-    await wait(1000);
-    setInputDiv1('156');
-    await wait(800);
-    setInputDiv2('12');
-    await wait(800);
-    setInputDivAns('13');
-    await wait(3000); // 停留久一點看結果
-    
-    setStep(2);
-    setFeedback('第二步：將原本的 11 束加上新包好的 13 束。');
-    await wait(2500);
-    
-    // 模擬填寫第二步
-    setInputAdd1('11');
-    await wait(1000);
-    setInputAdd2('13');
-    await wait(1000);
-    
-    setShowFinalTotal(true);
-    setInputAddAns('24');
-    setFeedback('答案算出：總共有 24 束玫瑰！');
-    setFeedbackType('success');
-  };
-
-  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-  // 互動模式邏輯
-  const checkStep1 = () => {
-    if (parseInt(inputDiv1) === 156 && parseInt(inputDiv2) === 12 && parseInt(inputDivAns) === 13) {
-      setFeedback('答對了！156 除以 12 等於 13 束。');
-      setFeedbackType('success');
-      setIsPacking(true);
-      
-      // 快速完成動畫
-      let tempLoose = currentLoose;
-      let tempBouquets = newBouquets;
-      const packInterval = setInterval(() => {
-        if (tempLoose >= 12) {
-          tempLoose -= 12;
-          tempBouquets += 1;
-          setCurrentLoose(tempLoose);
-          setNewBouquets(tempBouquets);
-        } else {
-          clearInterval(packInterval);
-          setIsPacking(false);
-          setTimeout(() => {
-            setStep(2);
-            setFeedback('現在進入第二步，計算總數。');
-            setFeedbackType('neutral');
-          }, 1000);
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-800: #1f2937;
         }
-      }, 50);
-    } else {
-      setFeedback('算式好像不太對喔？試試看：156 枝，每 12 枝一束。');
-      setFeedbackType('error');
-    }
-  };
 
-  const checkStep2 = () => {
-    if (
-      (parseInt(inputAdd1) === 11 && parseInt(inputAdd2) === 13 && parseInt(inputAddAns) === 24) ||
-      (parseInt(inputAdd1) === 13 && parseInt(inputAdd2) === 11 && parseInt(inputAddAns) === 24)
-    ) {
-      setFeedback('太棒了！完全正確！現有 24 束玫瑰。');
-      setFeedbackType('success');
-      setShowFinalTotal(true);
-    } else {
-      setFeedback('再想一想，原有 11 束，加上新包好的 13 束...');
-      setFeedbackType('error');
-    }
-  };
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--sky-50);
+            color: var(--gray-800);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-  // UI 元件
-  const BouquetIcon = ({ count, color = "text-rose-500" }) => (
-    <div className="flex flex-col items-center m-1 transition-all duration-500 transform scale-100 hover:scale-110">
-      <div className={`relative ${color}`}>
-        <Flower size={32} fill="currentColor" strokeWidth={1.5} />
-        <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5">
-          <div className="text-[10px] text-white font-bold px-1">12</div>
-        </div>
-      </div>
-    </div>
-  );
+        /* Utility Classes replacement */
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
 
-  return (
-    <div className="min-h-screen bg-sky-50 font-sans text-gray-800 p-4 md:p-8 flex flex-col items-center">
-      
-      {/* Header */}
-      <header className="w-full max-w-4xl bg-white rounded-2xl shadow-lg p-6 mb-6 text-center border-b-4 border-sky-400">
-        <h1 className="text-2xl md:text-3xl font-bold text-sky-600 mb-2">🌹 花店玫瑰數學題 🌹</h1>
-        <p className="text-gray-600 text-lg">
-          題目：原有 <strong>11</strong> 束，店員再把 <strong>156</strong> 枝玫瑰包裝成每 <strong>12</strong> 枝一束，花店現有玫瑰多少束？
-        </p>
-      </header>
+        .card {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
 
-      {/* Main Game Area */}
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
+        @media (min-width: 768px) {
+            .card {
+                flex-direction: row;
+                min-height: 500px;
+            }
+        }
+
+        .header {
+            background-color: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+            border-bottom: 4px solid var(--sky-400);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: var(--sky-600);
+            margin: 0 0 8px 0;
+            font-size: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .header h1 { font-size: 1.875rem; }
+        }
+
+        .text-lg { font-size: 1.125rem; }
+        .text-gray-600 { color: var(--gray-600); }
+        .text-rose-600 { color: var(--rose-600); }
+        .font-bold { font-weight: 700; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mr-2 { margin-right: 0.5rem; }
         
-        {/* Left: Visualization */}
-        <div className="w-full md:w-1/2 bg-sky-100 p-4 flex flex-col border-b md:border-b-0 md:border-r border-sky-200">
-          <h3 className="text-xl font-bold text-sky-700 mb-4 flex items-center">
-            <Package className="mr-2" /> 花店現場
-          </h3>
+        /* Layout Sections */
+        .left-panel {
+            width: 100%;
+            background-color: var(--sky-100);
+            padding: 16px;
+            border-bottom: 1px solid var(--sky-200);
+            display: flex;
+            flex-direction: column;
+        }
 
-          {/* Top Shelf: Original Bouquets */}
-          <div className="bg-white/60 rounded-xl p-4 mb-4 shadow-sm min-h-[120px]">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-bold text-gray-500">原有花束 (11束)</span>
-              {showFinalTotal && <span className="text-sm font-bold text-green-600 animate-bounce">總共 24 束!</span>}
-            </div>
-            <div className="flex flex-wrap content-start">
-              {Array.from({ length: originalBouquets }).map((_, i) => (
-                <BouquetIcon key={`orig-${i}`} count={1} color="text-rose-400" />
-              ))}
-              {/* Animated New Bouquets moving here */}
-              {step === 2 && Array.from({ length: newBouquets }).map((_, i) => (
-                <div key={`moved-${i}`} className="animate-in fade-in zoom-in duration-500">
-                  <BouquetIcon count={1} color="text-rose-600" />
-                </div>
-              ))}
-            </div>
-          </div>
+        @media (min-width: 768px) {
+            .left-panel {
+                width: 50%;
+                border-bottom: none;
+                border-right: 1px solid var(--sky-200);
+            }
+        }
 
-          {/* Bottom Area: Packing Station */}
-          <div className="bg-orange-50 rounded-xl p-4 flex-grow shadow-inner border border-orange-100 relative">
-            <span className="text-sm font-bold text-orange-400 block mb-2">包裝工作台</span>
+        .right-panel {
+            width: 100%;
+            padding: 24px;
+            background-color: white;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        @media (min-width: 768px) {
+            .right-panel { width: 50%; }
+        }
+
+        /* Visualization Elements */
+        .shelf {
+            background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            min-height: 120px;
+        }
+        
+        .bouquet-grid {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+        }
+
+        .bouquet-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 4px;
+            transition: transform 0.3s;
+        }
+        
+        .bouquet-item:hover {
+            transform: scale(1.1);
+        }
+
+        .flower-icon {
+            position: relative;
+        }
+        
+        .flower-count-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            background-color: var(--green-500);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 0 4px;
+            border-radius: 9999px;
+        }
+
+        .workspace {
+            background-color: var(--orange-50);
+            border-radius: 12px;
+            padding: 16px;
+            flex-grow: 1;
+            border: 1px solid var(--orange-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            position: relative;
+        }
+
+        .loose-bin {
+            width: 33%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .loose-circle {
+            background-color: var(--rose-100);
+            border: 4px solid var(--rose-100);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+
+        .loose-count {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--rose-500);
+            z-index: 10;
+        }
+
+        .arrow-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-bottom: 32px;
+        }
+
+        /* Interaction Elements */
+        .feedback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.875rem;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .feedback.neutral { background-color: var(--gray-100); color: var(--gray-600); }
+        .feedback.success { background-color: var(--green-100); color: var(--green-700); }
+        .feedback.error { background-color: var(--rose-100); color: var(--rose-600); }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover { transform: scale(1.02); }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background-color: var(--gray-300); cursor: not-allowed; transform: none; }
+
+        .btn-purple { background-color: var(--purple-500); }
+        .btn-purple:hover { background-color: var(--purple-600); }
+        
+        .btn-sky { background-color: var(--sky-500); }
+        .btn-sky:hover { background-color: var(--sky-600); }
+
+        .btn-green { background-color: var(--green-500); }
+        .btn-green:hover { background-color: var(--green-600); }
+
+        .input-group {
+            background-color: var(--gray-50);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .input-num {
+            width: 80px;
+            padding: 8px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .input-num:focus { border-color: var(--sky-500); }
+        .input-num.result { background-color: var(--sky-50); border-color: var(--sky-300); color: var(--sky-700); }
+        .input-num.result-green { background-color: var(--green-100); border-color: var(--green-300); color: var(--green-700); }
+
+        .step-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .step-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .step-title {
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: var(--gray-600);
+        }
+
+        .final-msg {
+            text-align: center;
+            background-color: var(--yellow-100);
+            border: 2px solid var(--yellow-300);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            animation: zoomIn 0.5s;
+        }
+
+        .equation-box {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(161, 98, 7, 0.2);
+        }
+        
+        .equation-text {
+            font-family: monospace;
+            font-size: 1.25rem;
+            background-color: rgba(255,255,255,0.6);
+            padding: 8px;
+            border-radius: 8px;
+            display: inline-block;
+            color: var(--yellow-800);
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); } 50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-bounce { animation: bounce 1s infinite; }
+        .animate-slideUp { animation: slideUp 0.5s ease-out; }
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s; }
+        
+        .footer {
+            margin-top: 32px;
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+        /* Reset Button */
+        .reset-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-400);
+            text-decoration: none;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--gray-100);
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .reset-link:hover { color: var(--gray-600); }
+
+        /* Icon SVGs as background or content */
+        .icon { width: 24px; height: 24px; display: inline-block; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🌹 花店玫瑰數學題 🌹</h1>
+            <p class="text-lg text-gray-600">
+                題目：原有 <strong>11</strong> 束，店員再把 <strong>156</strong> 枝玫瑰包裝成每 <strong>12</strong> 枝一束，花店現有玫瑰多少束？
+            </p>
+        </header>
+
+        <!-- Main Card -->
+        <div class="card">
             
-            <div className="flex justify-between items-end h-full">
-              {/* Loose Roses Bin */}
-              <div className="flex flex-col items-center justify-end w-1/3">
-                <div className="relative w-24 h-24 md:w-32 md:h-32 bg-red-100 rounded-full flex items-center justify-center border-4 border-red-200 shadow-inner overflow-hidden transition-all duration-300" style={{ transform: `scale(${0.5 + (currentLoose/156)*0.5})` }}>
-                  <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/flower.png')]"></div>
-                  <span className="text-2xl md:text-3xl font-bold text-red-500">{currentLoose}</span>
-                  <span className="text-xs text-red-400 absolute bottom-4">枝散裝</span>
-                </div>
-              </div>
+            <!-- Left: Visualization -->
+            <div class="left-panel">
+                <h3 class="text-lg font-bold" style="color: var(--sky-700); margin-bottom: 16px; display: flex; align-items: center;">
+                    <span id="icon-package" class="mr-2"></span> 花店現場
+                </h3>
 
-              {/* Arrow Animation */}
-              <div className="flex-1 flex justify-center items-center pb-8">
-                {isPacking ? (
-                  <div className="flex space-x-1 animate-pulse">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                    <span className="text-orange-500 font-bold text-xs">包裝中...</span>
-                  </div>
-                ) : (
-                  <span className="text-gray-300 text-2xl">➔</span>
-                )}
-              </div>
-
-              {/* New Bouquets Accumulation */}
-              <div className="w-1/3 flex flex-col items-center justify-end min-h-[100px]">
-                <div className="flex flex-wrap justify-center items-end content-end w-full">
-                  {step === 1 && Array.from({ length: newBouquets }).map((_, i) => (
-                    <div key={`new-${i}`} className="animate-in slide-in-from-left duration-300">
-                      <BouquetIcon count={1} color="text-rose-600" />
+                <!-- Top Shelf -->
+                <div class="shelf">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span class="text-gray-600 font-bold" style="font-size: 0.875rem;">原有花束 (11束)</span>
+                        <span id="total-badge" class="font-bold hidden" style="color: var(--green-600); font-size: 0.875rem;">總共 24 束!</span>
                     </div>
-                  ))}
-                  {step === 2 && <div className="text-gray-400 italic text-sm">已移至上方</div>}
+                    <div id="shelf-content" class="bouquet-grid">
+                        <!-- Original Bouquets injected by JS -->
+                    </div>
                 </div>
-                {step === 1 && <span className="text-rose-600 font-bold mt-2">{newBouquets} 束 (新)</span>}
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Right: Interaction Panel */}
-        <div className="w-full md:w-1/2 p-6 flex flex-col justify-center bg-white relative">
-          
-          {/* Feedback Message */}
-          <div className={`absolute top-0 left-0 right-0 p-3 text-center text-sm font-bold transition-colors duration-300 ${
-            feedbackType === 'success' ? 'bg-green-100 text-green-700' : 
-            feedbackType === 'error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
-          }`}>
-            {feedback || "請選擇模式開始"}
-          </div>
-
-          <div className="mt-12 flex-grow flex flex-col justify-center">
-            
-            {/* Mode Selection */}
-            {mode === 'menu' && (
-              <div className="space-y-4">
-                <button 
-                  onClick={() => handleModeSelect('demo')}
-                  className="w-full py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md flex items-center justify-center text-lg font-bold transition-transform hover:scale-105"
-                >
-                  <Play className="mr-2" /> 自動演示 (看老師做)
-                </button>
-                <button 
-                  onClick={() => handleModeSelect('interactive')}
-                  className="w-full py-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-md flex items-center justify-center text-lg font-bold transition-transform hover:scale-105"
-                >
-                  <Calculator className="mr-2" /> 互動解題 (我自己做)
-                </button>
-              </div>
-            )}
-
-            {/* Step 1: Division */}
-            {mode !== 'menu' && (
-              <div className={`transition-all duration-500 ${step === 2 && mode === 'interactive' ? 'opacity-50 pointer-events-none filter blur-[1px]' : 'opacity-100'}`}>
-                <div className="flex items-center mb-2">
-                  <div className="bg-sky-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-2">1</div>
-                  <h3 className="text-lg font-bold text-gray-700">先算：156 枝可以包成幾束？</h3>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-center space-x-2 mb-6">
-                  <input 
-                    type="number" 
-                    value={inputDiv1}
-                    onChange={(e) => setInputDiv1(e.target.value)}
-                    readOnly={mode === 'demo' || step === 2}
-                    className="w-20 p-2 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-sky-500 outline-none"
-                    placeholder="?"
-                  />
-                  <span className="text-2xl text-gray-400">÷</span>
-                  <input 
-                    type="number" 
-                    value={inputDiv2}
-                    onChange={(e) => setInputDiv2(e.target.value)}
-                    readOnly={mode === 'demo' || step === 2}
-                    className="w-16 p-2 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-sky-500 outline-none"
-                    placeholder="?"
-                  />
-                  <span className="text-2xl text-gray-400">=</span>
-                  <input 
-                    type="number" 
-                    value={inputDivAns}
-                    onChange={(e) => setInputDivAns(e.target.value)}
-                    readOnly={mode === 'demo' || step === 2}
-                    className="w-20 p-2 text-center text-xl font-bold border-2 border-sky-300 bg-sky-50 text-sky-700 rounded-lg focus:border-sky-500 outline-none"
-                    placeholder="?"
-                  />
-                  <span className="text-gray-500 font-bold ml-2">束</span>
-                </div>
-                {mode === 'interactive' && step === 1 && (
-                  <button 
-                    onClick={checkStep1}
-                    disabled={isPacking}
-                    className="w-full py-2 bg-sky-500 text-white rounded-lg font-bold shadow hover:bg-sky-600 disabled:bg-gray-300"
-                  >
-                    檢查答案 & 包裝
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Divider */}
-            {mode !== 'menu' && <div className="h-px bg-gray-200 my-6"></div>}
-
-            {/* Step 2: Addition */}
-            {mode !== 'menu' && step === 2 && (
-              <div className="animate-in slide-in-from-bottom duration-500">
-                <div className="flex items-center mb-2">
-                  <div className="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-2">2</div>
-                  <h3 className="text-lg font-bold text-gray-700">再算：現在總共有幾束？</h3>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-center space-x-2 mb-6">
-                   <input 
-                    type="number" 
-                    value={inputAdd1}
-                    onChange={(e) => setInputAdd1(e.target.value)}
-                    readOnly={mode === 'demo' || showFinalTotal}
-                    className="w-16 p-2 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-green-500 outline-none"
-                    placeholder="?"
-                  />
-                  <span className="text-2xl text-gray-400">+</span>
-                  <input 
-                    type="number" 
-                    value={inputAdd2}
-                    onChange={(e) => setInputAdd2(e.target.value)}
-                    readOnly={mode === 'demo' || showFinalTotal}
-                    className="w-16 p-2 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-green-500 outline-none"
-                    placeholder="?"
-                  />
-                  <span className="text-2xl text-gray-400">=</span>
-                  <input 
-                    type="number" 
-                    value={inputAddAns}
-                    onChange={(e) => setInputAddAns(e.target.value)}
-                    readOnly={mode === 'demo' || showFinalTotal}
-                    className="w-20 p-2 text-center text-xl font-bold border-2 border-green-300 bg-green-50 text-green-700 rounded-lg focus:border-green-500 outline-none"
-                    placeholder="?"
-                  />
-                  <span className="text-gray-500 font-bold ml-2">束</span>
-                </div>
-                {mode === 'interactive' && !showFinalTotal && (
-                  <button 
-                    onClick={checkStep2}
-                    className="w-full py-2 bg-green-500 text-white rounded-lg font-bold shadow hover:bg-green-600"
-                  >
-                    檢查最終答案
-                  </button>
-                )}
-                
-                {/* Final Success Message & Equation */}
-                {showFinalTotal && (
-                  <div className="text-center animate-in zoom-in duration-500 mt-4 p-4 bg-yellow-100 rounded-xl border-2 border-yellow-300">
-                    <h2 className="text-2xl font-bold text-yellow-700 mb-1">🎉 答對了！</h2>
-                    <p className="text-yellow-800 font-medium">花店現在共有 24 束玫瑰！</p>
+                <!-- Bottom Workspace -->
+                <div class="workspace">
+                    <span style="position: absolute; top: 12px; left: 16px; color: var(--orange-400); font-weight: bold; font-size: 0.875rem;">包裝工作台</span>
                     
-                    {/* Full Equation Display */}
-                    <div className="mt-4 pt-3 border-t border-yellow-200/60">
-                      <p className="text-sm text-yellow-800/80 mb-2 font-bold tracking-wide">完整列式：</p>
-                      <div className="text-xl md:text-2xl font-mono text-yellow-900 bg-white/60 rounded-lg p-3 shadow-sm inline-block tracking-wider">
-                        11 + (156 ÷ 12) = 24
-                      </div>
+                    <!-- Loose Bin -->
+                    <div class="loose-bin">
+                        <div id="loose-circle" class="loose-circle" style="width: 100px; height: 100px;">
+                            <!-- Flower Pattern Overlay done with CSS/SVG in JS -->
+                            <span id="loose-count" class="loose-count">156</span>
+                            <span style="position: absolute; bottom: 10px; font-size: 0.75rem; color: var(--rose-400);">枝散裝</span>
+                        </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
-          {/* Reset Button */}
-          {mode !== 'menu' && (
-            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-center">
-              <button 
-                onClick={() => setMode('menu')}
-                className="flex items-center text-gray-400 hover:text-gray-600 font-medium text-sm"
-              >
-                <RotateCcw size={16} className="mr-1" /> 回主選單
-              </button>
+                    <!-- Arrow -->
+                    <div class="arrow-area">
+                        <div id="packing-indicator" class="hidden" style="display: flex; gap: 4px;">
+                            <div style="width: 8px; height: 8px; background: var(--orange-400); border-radius: 50%;" class="animate-pulse"></div>
+                            <div style="width: 8px; height: 8px; background: var(--orange-400); border-radius: 50%;" class="animate-pulse" style="animation-delay: 0.1s"></div>
+                            <div style="width: 8px; height: 8px; background: var(--orange-400); border-radius: 50%;" class="animate-pulse" style="animation-delay: 0.2s"></div>
+                        </div>
+                        <span id="static-arrow" style="font-size: 2rem; color: var(--gray-300);">➔</span>
+                    </div>
+
+                    <!-- New Bouquets -->
+                    <div style="width: 33%; display: flex; flex-direction: column; align-items: center; min-height: 100px; justify-content: flex-end;">
+                        <div id="new-bouquets-area" class="bouquet-grid" style="justify-content: center; align-items: flex-end;"></div>
+                        <span id="new-label" class="text-rose-600 font-bold" style="margin-top: 8px; font-size: 0.875rem;">0 束 (新)</span>
+                        <span id="moved-label" class="text-gray-600 hidden" style="margin-top: 8px; font-size: 0.875rem; font-style: italic;">已移至上方</span>
+                    </div>
+                </div>
             </div>
-          )}
-        </div>
-      </div>
-      
-      <div className="mt-8 text-gray-400 text-sm">
-        專為小學生設計的數學互動教學
-      </div>
-    </div>
-  );
-};
 
-export default FlowerShopMath;
+            <!-- Right: Interaction -->
+            <div class="right-panel">
+                <div id="feedback" class="feedback neutral">請選擇模式開始</div>
+
+                <div style="margin-top: 48px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+                    
+                    <!-- Menu View -->
+                    <div id="view-menu">
+                        <button onclick="startDemo()" class="btn btn-purple">
+                            <span class="icon mr-2" id="icon-play"></span> 自動演示 (看老師做)
+                        </button>
+                        <button onclick="startInteractive()" class="btn btn-sky">
+                            <span class="icon mr-2" id="icon-calc"></span> 互動解題 (我自己做)
+                        </button>
+                    </div>
+
+                    <!-- Step 1 View -->
+                    <div id="view-step1" class="hidden fade-in">
+                        <div class="step-label">
+                            <div class="step-badge" style="background-color: var(--sky-500);">1</div>
+                            <span class="step-title">先算：156 枝可以包成幾束？</span>
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="in-div-1" class="input-num" placeholder="?">
+                            <span style="font-size: 1.5rem; color: var(--gray-400);">÷</span>
+                            <input type="number" id="in-div-2" class="input-num" style="width: 60px;" placeholder="?">
+                            <span style="font-size: 1.5rem; color: var(--gray-400);">=</span>
+                            <input type="number" id="in-div-ans" class="input-num result" placeholder="?">
+                            <span class="font-bold text-gray-600">束</span>
+                        </div>
+                        <button id="btn-check-1" onclick="checkStep1()" class="btn btn-sky">檢查答案 & 包裝</button>
+                    </div>
+
+                    <div id="divider" class="hidden" style="height: 1px; background-color: var(--gray-200); margin: 24px 0;"></div>
+
+                    <!-- Step 2 View -->
+                    <div id="view-step2" class="hidden animate-slideUp">
+                        <div class="step-label">
+                            <div class="step-badge" style="background-color: var(--green-500);">2</div>
+                            <span class="step-title">再算：現在總共有幾束？</span>
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="in-add-1" class="input-num" style="width: 60px;" placeholder="?">
+                            <span style="font-size: 1.5rem; color: var(--gray-400);">+</span>
+                            <input type="number" id="in-add-2" class="input-num" style="width: 60px;" placeholder="?">
+                            <span style="font-size: 1.5rem; color: var(--gray-400);">=</span>
+                            <input type="number" id="in-add-ans" class="input-num result-green" placeholder="?">
+                            <span class="font-bold text-gray-600">束</span>
+                        </div>
+                        <button id="btn-check-2" onclick="checkStep2()" class="btn btn-green">檢查最終答案</button>
+
+                        <div id="final-success" class="final-msg hidden">
+                            <h2 style="font-size: 1.5rem; color: var(--yellow-700); margin: 0 0 4px 0;">🎉 答對了！</h2>
+                            <p style="color: var(--yellow-800); font-weight: 500;">花店現在共有 24 束玫瑰！</p>
+                            <div class="equation-box">
+                                <p style="font-size: 0.875rem; font-weight: bold; color: rgba(133, 77, 14, 0.8); margin-bottom: 8px;">完整列式：</p>
+                                <div class="equation-text">11 + (156 ÷ 12) = 24</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer / Reset -->
+                <div id="reset-area" class="hidden">
+                    <a onclick="resetGame()" class="reset-link">
+                        <span class="icon mr-2" id="icon-reset"></span> 回主選單
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">專為小學生設計的數學互動教學</div>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+        // Icons (SVG Strings)
+        const SVGS = {
+            play: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
+            calc: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" /><line x1="8" x2="16" y1="6" y2="6" /><line x1="16" x2="16" y1="14" y2="18" /><path d="M16 10h.01" /><path d="M12 10h.01" /><path d="M8 10h.01" /><path d="M12 14h.01" /><path d="M8 14h.01" /><path d="M12 18h.01" /><path d="M8 18h.01" /></svg>`,
+            package: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16.5 9.4-9-5.19"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+            reset: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12" /><path d="M3 5v7h7" /></svg>`
+        };
+
+        function getFlowerSVG(colorClass) {
+            let color = '#f43f5e'; // rose-500
+            if(colorClass === 'text-rose-400') color = '#fb7185';
+            if(colorClass === 'text-rose-600') color = '#e11d48';
+            
+            return `<div class="bouquet-item">
+                <div style="position: relative; color: ${color};">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 16.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 1 1 4.5 4.5 4.5 4.5 0 1 1-4.5 4.5z"/><path d="M12 7.5V3"/><path d="M12 21v-4.5"/><path d="M16.5 12H21"/><path d="M3 12h4.5"/><path d="M15.18 8.82 18.36 5.64"/><path d="M5.64 18.36l3.18-3.18"/><path d="M15.18 15.18l3.18 3.18"/><path d="M5.64 5.64l3.18 3.18"/></svg>
+                    <div class="flower-count-badge">12</div>
+                </div>
+            </div>`;
+        }
+
+        // State
+        let state = {
+            mode: 'menu', // menu, demo, interactive
+            step: 1,
+            originalBouquets: 11,
+            currentLoose: 156,
+            newBouquets: 0,
+            isPacking: false,
+            showFinal: false
+        };
+
+        // DOM Elements
+        const els = {
+            shelfContent: document.getElementById('shelf-content'),
+            looseCount: document.getElementById('loose-count'),
+            looseCircle: document.getElementById('loose-circle'),
+            newBouquetsArea: document.getElementById('new-bouquets-area'),
+            newLabel: document.getElementById('new-label'),
+            movedLabel: document.getElementById('moved-label'),
+            packingIndicator: document.getElementById('packing-indicator'),
+            staticArrow: document.getElementById('static-arrow'),
+            totalBadge: document.getElementById('total-badge'),
+            feedback: document.getElementById('feedback'),
+            viewMenu: document.getElementById('view-menu'),
+            viewStep1: document.getElementById('view-step1'),
+            viewStep2: document.getElementById('view-step2'),
+            divider: document.getElementById('divider'),
+            resetArea: document.getElementById('reset-area'),
+            btnCheck1: document.getElementById('btn-check-1'),
+            btnCheck2: document.getElementById('btn-check-2'),
+            finalSuccess: document.getElementById('final-success'),
+            // Inputs
+            inDiv1: document.getElementById('in-div-1'),
+            inDiv2: document.getElementById('in-div-2'),
+            inDivAns: document.getElementById('in-div-ans'),
+            inAdd1: document.getElementById('in-add-1'),
+            inAdd2: document.getElementById('in-add-2'),
+            inAddAns: document.getElementById('in-add-ans'),
+        };
+
+        // Init
+        function init() {
+            // Inject Icons
+            document.getElementById('icon-play').innerHTML = SVGS.play;
+            document.getElementById('icon-calc').innerHTML = SVGS.calc;
+            document.getElementById('icon-package').innerHTML = SVGS.package;
+            document.getElementById('icon-reset').innerHTML = SVGS.reset;
+
+            renderOriginalBouquets();
+        }
+
+        function renderOriginalBouquets() {
+            els.shelfContent.innerHTML = '';
+            for(let i=0; i<state.originalBouquets; i++) {
+                els.shelfContent.innerHTML += getFlowerSVG('text-rose-400');
+            }
+        }
+
+        function setFeedback(msg, type = 'neutral') {
+            els.feedback.textContent = msg;
+            els.feedback.className = `feedback ${type}`;
+        }
+
+        function resetGame() {
+            state = {
+                mode: 'menu',
+                step: 1,
+                originalBouquets: 11,
+                currentLoose: 156,
+                newBouquets: 0,
+                isPacking: false,
+                showFinal: false
+            };
+            
+            // Clear inputs
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(i => { i.value = ''; i.readOnly = false; });
+            
+            // Reset visual elements
+            renderOriginalBouquets();
+            els.newBouquetsArea.innerHTML = '';
+            updateLooseVisuals();
+            els.newLabel.textContent = '0 束 (新)';
+            els.newLabel.classList.remove('hidden');
+            els.movedLabel.classList.add('hidden');
+            els.totalBadge.classList.add('hidden');
+            els.finalSuccess.classList.add('hidden');
+
+            // Hide/Show Views
+            els.viewMenu.classList.remove('hidden');
+            els.viewStep1.classList.add('hidden');
+            els.viewStep2.classList.add('hidden');
+            els.divider.classList.add('hidden');
+            els.resetArea.classList.add('hidden');
+            els.btnCheck1.classList.remove('hidden');
+            els.btnCheck2.classList.remove('hidden');
+            
+            setFeedback('請選擇模式開始');
+        }
+
+        function updateLooseVisuals() {
+            els.looseCount.textContent = state.currentLoose;
+            // Scale effect
+            const scale = 0.5 + (state.currentLoose / 156) * 0.5;
+            els.looseCircle.style.transform = `scale(${scale})`;
+        }
+
+        function updateNewBouquetsVisuals() {
+            // Re-render new bouquets
+            let html = '';
+            for(let i=0; i<state.newBouquets; i++) {
+                html += getFlowerSVG('text-rose-600');
+            }
+            els.newBouquetsArea.innerHTML = html;
+            els.newLabel.textContent = `${state.newBouquets} 束 (新)`;
+        }
+
+        function startInteractive() {
+            state.mode = 'interactive';
+            els.viewMenu.classList.add('hidden');
+            els.viewStep1.classList.remove('hidden');
+            els.resetArea.classList.remove('hidden');
+            setFeedback('第一步：請輸入算式，156 枝每 12 枝一束。');
+        }
+
+        function startDemo() {
+            state.mode = 'demo';
+            els.viewMenu.classList.add('hidden');
+            els.viewStep1.classList.remove('hidden');
+            els.resetArea.classList.remove('hidden');
+            // Hide interactive buttons
+            els.btnCheck1.classList.add('hidden');
+            els.btnCheck2.classList.add('hidden');
+            
+            // Set inputs to readonly
+            document.querySelectorAll('input').forEach(i => i.readOnly = true);
+
+            runDemoSequence();
+        }
+
+        async function runDemoSequence() {
+            setFeedback('題目：花店裏原有玫瑰 11 束，將 156 枝散裝玫瑰每 12 枝包成一束...');
+            await wait(3500);
+
+            setFeedback('第一步：計算散裝玫瑰可以包成幾束？ (156 ÷ 12)');
+            await wait(1000);
+
+            // Animation: Packing
+            els.staticArrow.classList.add('hidden');
+            els.packingIndicator.classList.remove('hidden');
+
+            let packInterval = setInterval(() => {
+                if (state.currentLoose >= 12) {
+                    state.currentLoose -= 12;
+                    state.newBouquets += 1;
+                    updateLooseVisuals();
+                    updateNewBouquetsVisuals();
+                } else {
+                    clearInterval(packInterval);
+                    els.packingIndicator.classList.add('hidden');
+                    els.staticArrow.classList.remove('hidden');
+                    finishStep1Demo();
+                }
+            }, 600);
+        }
+
+        async function finishStep1Demo() {
+            setFeedback('包裝完成！我們得到了 13 束新玫瑰。');
+            
+            // Fill inputs slowly
+            await wait(1000);
+            els.inDiv1.value = 156;
+            await wait(800);
+            els.inDiv2.value = 12;
+            await wait(800);
+            els.inDivAns.value = 13;
+            
+            await wait(3000);
+            
+            // Transition to Step 2
+            els.divider.classList.remove('hidden');
+            els.viewStep2.classList.remove('hidden');
+            // Auto scroll
+            els.viewStep2.scrollIntoView({ behavior: 'smooth' });
+
+            setFeedback('第二步：將原本的 11 束加上新包好的 13 束。');
+            
+            // Move bouquets visually (Simple fake move: clear bottom, add to top)
+            els.newLabel.classList.add('hidden');
+            els.movedLabel.classList.remove('hidden');
+            els.newBouquetsArea.innerHTML = ''; // Hide from bottom
+            // Add to top
+            for(let i=0; i<13; i++) {
+                els.shelfContent.innerHTML += `<div class="fade-in">${getFlowerSVG('text-rose-600')}</div>`;
+            }
+
+            await wait(2500);
+
+            // Fill inputs
+            els.inAdd1.value = 11;
+            await wait(1000);
+            els.inAdd2.value = 13;
+            await wait(1000);
+            
+            // Show result
+            els.finalSuccess.classList.remove('hidden');
+            els.totalBadge.classList.remove('hidden');
+            els.inAddAns.value = 24;
+            setFeedback('答案算出：總共有 24 束玫瑰！', 'success');
+        }
+
+        function checkStep1() {
+            const v1 = parseInt(els.inDiv1.value);
+            const v2 = parseInt(els.inDiv2.value);
+            const ans = parseInt(els.inDivAns.value);
+
+            if (v1 === 156 && v2 === 12 && ans === 13) {
+                setFeedback('答對了！156 除以 12 等於 13 束。', 'success');
+                els.btnCheck1.disabled = true;
+                
+                // Animation
+                els.staticArrow.classList.add('hidden');
+                els.packingIndicator.classList.remove('hidden');
+                
+                let packInterval = setInterval(() => {
+                    if (state.currentLoose >= 12) {
+                        state.currentLoose -= 12;
+                        state.newBouquets += 1;
+                        updateLooseVisuals();
+                        updateNewBouquetsVisuals();
+                    } else {
+                        clearInterval(packInterval);
+                        els.packingIndicator.classList.add('hidden');
+                        els.staticArrow.classList.remove('hidden');
+                        
+                        setTimeout(() => {
+                            state.step = 2;
+                            els.divider.classList.remove('hidden');
+                            els.viewStep2.classList.remove('hidden');
+                            els.viewStep2.scrollIntoView({ behavior: 'smooth' });
+                            setFeedback('現在進入第二步，計算總數。');
+                            
+                            // Move visuals logic for interactive mode
+                             els.newLabel.classList.add('hidden');
+                             els.movedLabel.classList.remove('hidden');
+                             els.newBouquetsArea.innerHTML = '';
+                             for(let i=0; i<13; i++) {
+                                els.shelfContent.innerHTML += `<div class="fade-in">${getFlowerSVG('text-rose-600')}</div>`;
+                             }
+
+                        }, 1000);
+                    }
+                }, 50); // Fast for interactive
+            } else {
+                setFeedback('算式好像不太對喔？試試看：156 枝，每 12 枝一束。', 'error');
+            }
+        }
+
+        function checkStep2() {
+            const v1 = parseInt(els.inAdd1.value);
+            const v2 = parseInt(els.inAdd2.value);
+            const ans = parseInt(els.inAddAns.value);
+
+            if (
+                ((v1 === 11 && v2 === 13) || (v1 === 13 && v2 === 11)) && ans === 24
+            ) {
+                setFeedback('太棒了！完全正確！現有 24 束玫瑰。', 'success');
+                els.finalSuccess.classList.remove('hidden');
+                els.totalBadge.classList.remove('hidden');
+                els.btnCheck2.disabled = true;
+            } else {
+                setFeedback('再想一想，原有 11 束，加上新包好的 13 束...', 'error');
+            }
+        }
+
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>
